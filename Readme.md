@@ -85,9 +85,47 @@ The application uses a monorepo structure with shared code:
 - **Vite**: Fast development server and build tool
 - **TypeScript**: Type safety across the entire stack
 - **ESBuild**: Fast JavaScript bundler for production
-- **Replit Integration**: Development environment optimizations
 
-## Deployment Strategy
+## Setup & Running Locally
+
+### Prerequisites
+- Node.js (v18 or higher)
+- PostgreSQL database (e.g., Neon)
+
+### Installation
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the root directory with your database connection string:
+   ```env
+   DATABASE_URL=postgresql://user:password@host:port/database?sslmode=require
+   ```
+4. Push the database schema:
+   ```bash
+   npm run db:push
+   ```
+
+### Running Development Server
+```bash
+npm run dev
+```
+The application will be available at `http://localhost:5000`.
+
+## Deployment
+
+### Vercel Deployment
+This application is configured for Vercel deployment.
+
+1. Install Vercel CLI or connect your GitHub repository to Vercel.
+2. In your Vercel project settings, go to **Settings > Environment Variables**.
+3. Add the `DATABASE_URL` environment variable with your production database connection string.
+4. Deploy the application:
+   ```bash
+   vercel --prod
+   ```
+
 
 ### Development
 - Uses Vite dev server for frontend with HMR (Hot Module Replacement)

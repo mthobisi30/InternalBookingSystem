@@ -29,8 +29,8 @@ import type { Resource } from "@/lib/types";
 export default function Resources() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -82,8 +82,8 @@ export default function Resources() {
   const filteredResources = resources.filter((resource) => {
     const matchesSearch = resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          resource.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = !typeFilter || getResourceType(resource.name) === typeFilter;
-    const matchesStatus = !statusFilter || 
+    const matchesType = typeFilter === "all" || getResourceType(resource.name) === typeFilter;
+    const matchesStatus = statusFilter === "all" || 
                          (statusFilter === "available" && resource.isAvailable) ||
                          (statusFilter === "unavailable" && !resource.isAvailable);
     
@@ -156,7 +156,7 @@ export default function Resources() {
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="room">Meeting Rooms</SelectItem>
                   <SelectItem value="vehicle">Vehicles</SelectItem>
                   <SelectItem value="equipment">Equipment</SelectItem>
@@ -172,7 +172,7 @@ export default function Resources() {
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="available">Available</SelectItem>
                   <SelectItem value="unavailable">Unavailable</SelectItem>
                 </SelectContent>
@@ -184,8 +184,8 @@ export default function Resources() {
                 className="w-full"
                 onClick={() => {
                   setSearchTerm("");
-                  setTypeFilter("");
-                  setStatusFilter("");
+                  setTypeFilter("all");
+                  setStatusFilter("all");
                 }}
               >
                 <Filter className="w-4 h-4 mr-2" />
@@ -213,7 +213,7 @@ export default function Resources() {
               {filteredResources.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                    {searchTerm || typeFilter || statusFilter ? "No resources match your filters" : "No resources found"}
+                    {searchTerm || typeFilter !== "all" || statusFilter !== "all" ? "No resources match your filters" : "No resources found"}
                   </TableCell>
                 </TableRow>
               ) : (

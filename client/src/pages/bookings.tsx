@@ -33,9 +33,9 @@ interface BookingsProps {
 
 export default function Bookings({ createModalOpen, setCreateModalOpen }: BookingsProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [resourceFilter, setResourceFilter] = useState("");
+  const [resourceFilter, setResourceFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -140,13 +140,13 @@ export default function Bookings({ createModalOpen, setCreateModalOpen }: Bookin
                          booking.bookings.bookedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          booking.bookings.purpose.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesResource = !resourceFilter || booking.bookings.resourceId.toString() === resourceFilter;
+    const matchesResource = resourceFilter === "all" || booking.bookings.resourceId.toString() === resourceFilter;
     
     const matchesDate = !dateFilter || 
                        new Date(booking.bookings.startTime).toDateString() === new Date(dateFilter).toDateString();
     
     const status = getBookingStatus(booking);
-    const matchesStatus = !statusFilter || status === statusFilter;
+    const matchesStatus = statusFilter === "all" || status === statusFilter;
     
     return matchesSearch && matchesResource && matchesDate && matchesStatus;
   });
@@ -217,7 +217,7 @@ export default function Bookings({ createModalOpen, setCreateModalOpen }: Bookin
                   <SelectValue placeholder="All Resources" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Resources</SelectItem>
+                  <SelectItem value="all">All Resources</SelectItem>
                   {resources.map((resource) => (
                     <SelectItem key={resource.id} value={resource.id.toString()}>
                       {resource.name}
@@ -246,7 +246,7 @@ export default function Bookings({ createModalOpen, setCreateModalOpen }: Bookin
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="upcoming">Upcoming</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
@@ -259,9 +259,9 @@ export default function Bookings({ createModalOpen, setCreateModalOpen }: Bookin
                 className="w-full"
                 onClick={() => {
                   setSearchTerm("");
-                  setResourceFilter("");
+                  setResourceFilter("all");
                   setDateFilter("");
-                  setStatusFilter("");
+                  setStatusFilter("all");
                 }}
               >
                 <Filter className="w-4 h-4 mr-2" />
@@ -290,7 +290,7 @@ export default function Bookings({ createModalOpen, setCreateModalOpen }: Bookin
               {filteredBookings.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                    {searchTerm || resourceFilter || dateFilter || statusFilter ? "No bookings match your filters" : "No bookings found"}
+                    {searchTerm || resourceFilter !== "all" || dateFilter || statusFilter !== "all" ? "No bookings match your filters" : "No bookings found"}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -299,6 +299,8 @@ export default function Bookings({ createModalOpen, setCreateModalOpen }: Bookin
                   
                   const Icon = getResourceIcon(booking.resources.name);
                   const status = getBookingStatus(booking);
+                  const resourceName = booking.resources.name;
+                  const bookingId = booking.bookings.id;
                   
                   return (
                     <TableRow key={booking.bookings.id} className="hover:bg-gray-50">
@@ -337,7 +339,7 @@ export default function Bookings({ createModalOpen, setCreateModalOpen }: Bookin
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => handleCancel(booking.bookings.id, booking.resources.name)}
+                            onClick={() => handleCancel(bookingId, resourceName)}
                             className="text-red-600 hover:text-red-900"
                           >
                             <X className="h-4 w-4" />
