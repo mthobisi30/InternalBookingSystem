@@ -66,6 +66,7 @@ export type Resource = typeof resources.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
 
-export type BookingWithResource = Booking & {
-  resource: Resource;
+export type BookingWithResource = {
+  bookings: Booking;
+  resources: Resource | null;
 };

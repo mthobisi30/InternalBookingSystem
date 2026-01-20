@@ -1,6 +1,6 @@
 import { resources, bookings, type Resource, type InsertResource, type Booking, type InsertBooking, type BookingWithResource } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, or } from "drizzle-orm";
+import { eq, and, gte, lte, or, ne, not } from "drizzle-orm";
 
 export interface IStorage {
   // Resources
@@ -50,7 +50,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteResource(id: number): Promise<boolean> {
     const result = await db.delete(resources).where(eq(resources.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Bookings
@@ -58,7 +58,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(bookings)
-      .leftJoin(resources, eq(bookings.resourceId, resources.id));
+      .leftJoin(resources, eq(bookings.resourceId, resources.id)) as BookingWithResource[];
   }
 
   async getBooking(id: number): Promise<BookingWithResource | undefined> {
@@ -66,7 +66,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(bookings)
       .leftJoin(resources, eq(bookings.resourceId, resources.id))
-      .where(eq(bookings.id, id));
+      .where(eq(bookings.id, id)) as BookingWithResource[];
     return booking || undefined;
   }
 
@@ -75,7 +75,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(bookings)
       .leftJoin(resources, eq(bookings.resourceId, resources.id))
-      .where(eq(bookings.resourceId, resourceId));
+      .where(eq(bookings.resourceId, resourceId)) as BookingWithResource[];
   }
 
   async createBooking(booking: InsertBooking): Promise<Booking> {
@@ -97,33 +97,33 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBooking(id: number): Promise<boolean> {
     const result = await db.delete(bookings).where(eq(bookings.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async checkBookingConflict(resourceId: number, startTime: Date, endTime: Date, excludeBookingId?: number): Promise<boolean> {
-    let query = db
-      .select()
-      .from(bookings)
-      .where(
-        and(
-          eq(bookings.resourceId, resourceId),
-          or(
-            // New booking starts during existing booking
-            and(gte(startTime, bookings.startTime), lte(startTime, bookings.endTime)),
-            // New booking ends during existing booking
-            and(gte(endTime, bookings.startTime), lte(endTime, bookings.endTime)),
-            // New booking completely encompasses existing booking
-            and(lte(startTime, bookings.startTime), gte(endTime, bookings.endTime))
-          )
-        )
-      );
+    const conditions = [
+      eq(bookings.resourceId, resourceId),
+      or(
+        // New booking starts during existing booking
+        and(lte(bookings.startTime, startTime), gte(bookings.endTime, startTime)),
+        // New booking ends during existing booking
+        and(lte(bookings.startTime, endTime), gte(bookings.endTime, endTime)),
+        // New booking completely encompasses existing booking
+        and(gte(bookings.startTime, startTime), lte(bookings.endTime, endTime))
+      )
+    ];
 
     if (excludeBookingId) {
-      query = query.where(and(query.where, eq(bookings.id, excludeBookingId)));
+      // @ts-ignore
+      conditions.push(not(eq(bookings.id, excludeBookingId)));
     }
 
-    const conflicts = await query;
-    return conflicts.length > 0;
+    const [conflict] = await db
+      .select()
+      .from(bookings)
+      .where(and(...conditions));
+
+    return !!conflict;
   }
 }
 
